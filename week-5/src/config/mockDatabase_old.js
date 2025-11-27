@@ -1,5 +1,5 @@
 // Mock Database - for demonstration when MySQL is not available
-const mockUsers = [
+const users = [
   {
     id: 1,
     username: 'john_doe',
@@ -7,7 +7,10 @@ const mockUsers = [
     first_name: 'John',
     last_name: 'Doe',
     bio: 'Photography enthusiast',
+    role: 'user',
+    password_hash: 'temp_hash',
     created_at: new Date('2024-01-01'),
+    updated_at: new Date('2024-01-01'),
     media_count: 2,
     likes_given: 5
   },
@@ -18,7 +21,10 @@ const mockUsers = [
     first_name: 'Jane',
     last_name: 'Smith',
     bio: 'Digital artist',
+    role: 'user',
+    password_hash: 'temp_hash',
     created_at: new Date('2024-01-02'),
+    updated_at: new Date('2024-01-02'),
     media_count: 1,
     likes_given: 3
   },
@@ -29,13 +35,16 @@ const mockUsers = [
     first_name: 'Mike',
     last_name: 'Johnson',
     bio: 'Travel blogger',
+    role: 'user',
+    password_hash: 'temp_hash',
     created_at: new Date('2024-01-03'),
+    updated_at: new Date('2024-01-03'),
     media_count: 1,
     likes_given: 2
   }
 ];
 
-const mockMedia = [
+const media = [
   {
     id: 1,
     title: 'Red Bicycle',
@@ -239,4 +248,8 @@ class MockDatabase {
   }
 }
 
+// Export the class and the data arrays
 module.exports = MockDatabase;
+module.exports.users = users;
+module.exports.media = media;
+module.exports.likes = mockLikes;

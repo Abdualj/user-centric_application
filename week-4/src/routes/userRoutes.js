@@ -1,26 +1,25 @@
 // User routes - Express router for user endpoints
 const express = require('express');
 const UserController = require('../controllers/UserController');
-const { authMiddleware, adminRequired, ownerOrAdmin } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// GET /api/users - List all users (public)
+// GET /api/users - List all users
 router.get('/', UserController.getAllUsers);
 
-// GET /api/users/:id - Get user by ID (public)
+// GET /api/users/:id - Get user by ID
 router.get('/:id', UserController.getUserById);
 
-// GET /api/users/:id/stats - Get user statistics (public)
+// GET /api/users/:id/stats - Get user statistics
 router.get('/:id/stats', UserController.getUserStats);
 
-// POST /api/users - Create new user (admin only)
-router.post('/', authMiddleware, adminRequired, UserController.createUser);
+// POST /api/users - Create new user
+router.post('/', UserController.createUser);
 
-// PUT /api/users/:id - Update user (owner or admin only)
-router.put('/:id', authMiddleware, ownerOrAdmin, UserController.updateUser);
+// PUT /api/users/:id - Update user
+router.put('/:id', UserController.updateUser);
 
-// DELETE /api/users/:id - Delete user (owner or admin only)
-router.delete('/:id', authMiddleware, ownerOrAdmin, UserController.deleteUser);
+// DELETE /api/users/:id - Delete user
+router.delete('/:id', UserController.deleteUser);
 
 module.exports = router;
