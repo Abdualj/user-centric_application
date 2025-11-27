@@ -1,4 +1,5 @@
 // app.js
+require('dotenv').config();
 const express = require('express');
 const path = require('path');
 
@@ -6,6 +7,7 @@ const path = require('path');
 const { initializeDatabase } = require('./src/config/database');
 
 // Import routes
+const authRoutes = require('./src/routes/authRoutes');
 const mediaRoutes = require('./src/routes/mediaRoutes');
 const userRoutes = require('./src/routes/userRoutes');
 const likeRoutes = require('./src/routes/likeRoutes');
@@ -29,22 +31,28 @@ app.use('/public', express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => {
   const apiInfo = {
     name: 'User-Centric Media API',
-    version: '2.0',
-    description: 'A REST API for managing media files, users, and social interactions',
+    version: '3.0',
+    description: 'A REST API for managing media files, users, and social interactions with JWT authentication',
     endpoints: [
+      // Authentication endpoints
+      { method: 'POST', path: '/api/auth/login', description: 'User login' },
+      { method: 'POST', path: '/api/auth/register', description: 'User registration' },
+      { method: 'GET', path: '/api/auth/profile', description: 'Get current user profile (auth required)' },
+      { method: 'GET', path: '/api/auth/verify', description: 'Verify token validity (auth required)' },
+      
       // Media endpoints
       { method: 'GET', path: '/api/media', description: 'List all media items' },
       { method: 'GET', path: '/api/media/:id', description: 'Get media item by ID' },
-      { method: 'POST', path: '/api/media', description: 'Upload new media file' },
-      { method: 'PUT', path: '/api/media/:id', description: 'Update media item' },
-      { method: 'DELETE', path: '/api/media/:id', description: 'Delete media item' },
+      { method: 'POST', path: '/api/media', description: 'Upload new media file (auth required)' },
+      { method: 'PUT', path: '/api/media/:id', description: 'Update media item (owner/admin only)' },
+      { method: 'DELETE', path: '/api/media/:id', description: 'Delete media item (owner/admin only)' },
       
       // User endpoints
       { method: 'GET', path: '/api/users', description: 'List all users' },
       { method: 'GET', path: '/api/users/:id', description: 'Get user by ID' },
-      { method: 'POST', path: '/api/users', description: 'Create new user' },
-      { method: 'PUT', path: '/api/users/:id', description: 'Update user' },
-      { method: 'DELETE', path: '/api/users/:id', description: 'Delete user' },
+      { method: 'POST', path: '/api/users', description: 'Create new user (admin only)' },
+      { method: 'PUT', path: '/api/users/:id', description: 'Update user (owner/admin only)' },
+      { method: 'DELETE', path: '/api/users/:id', description: 'Delete user (owner/admin only)' },
       
       // Like endpoints
       { method: 'GET', path: '/api/likes/media/:id', description: 'Get likes for media item' },
@@ -61,6 +69,7 @@ app.get('/', (req, res) => {
 });
 
 // API Routes
+app.use('/api/auth', authRoutes);
 app.use('/api/media', mediaRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/likes', likeRoutes);

@@ -113,19 +113,23 @@ class UserController {
     try {
       const { id } = req.params;
       const updates = req.body;
+      const requestingUserId = req.user.id;
+      const userRole = req.user.role;
       
       // Remove password and email from updates for security
       const { password, email, password_hash, ...allowedUpdates } = updates;
+      // eslint-disable-next-line no-unused-vars
+      const _removed = { password, email, password_hash }; // Mark as intentionally unused
       
       if (Object.keys(allowedUpdates).length === 0) {
         return res.status(400).json({
           success: false,
           error: 'No valid fields to update',
-          message: 'Please provide username, first_name, last_name, or bio to update'
+          message: 'Please provide username, first_name, last_name, bio, or role to update'
         });
       }
       
-      const updatedUser = await UserModel.updateUser(id, allowedUpdates);
+      const updatedUser = await UserModel.updateUser(id, allowedUpdates, requestingUserId, userRole);
       
       if (!updatedUser) {
         return res.status(404).json({
@@ -151,6 +155,14 @@ class UserController {
         });
       }
       
+      if (error.message.includes('You can only')) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied',
+          message: error.message
+        });
+      }
+      
       res.status(500).json({
         success: false,
         error: 'Failed to update user',
@@ -163,6 +175,8 @@ class UserController {
   static async deleteUser(req, res) {
     try {
       const { id } = req.params;
+      const requestingUserId = req.user.id;
+      const userRole = req.user.role;
       
       // Check if user exists before deletion
       const user = await UserModel.getUserById(id);
@@ -174,7 +188,7 @@ class UserController {
         });
       }
       
-      const deleted = await UserModel.deleteUser(id);
+      const deleted = await UserModel.deleteUser(id, requestingUserId, userRole);
       
       if (deleted) {
         res.status(200).json({
@@ -190,6 +204,15 @@ class UserController {
       }
     } catch (error) {
       console.error('Error deleting user:', error);
+      
+      if (error.message.includes('You can only')) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied',
+          message: error.message
+        });
+      }
+      
       res.status(500).json({
         success: false,
         error: 'Failed to delete user',

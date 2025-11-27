@@ -7,7 +7,7 @@ const fs = require('fs').promises;
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, path.join(__dirname, '../../uploads/'))
+    cb(null, path.resolve('./uploads/'))
   },
   filename: function (req, file, cb) {
     // Generate unique filename
@@ -94,7 +94,8 @@ class MediaController {
         });
       }
       
-      const { title, description, user_id = 1 } = req.body; // Default user_id for demo
+      const { title, description } = req.body;
+      const user_id = req.user.id; // Get user ID from authenticated user
       
       if (!title) {
         return res.status(400).json({
@@ -113,7 +114,7 @@ class MediaController {
         file_size: req.file.size,
         file_path: `/uploads/${req.file.filename}`,
         mime_type: req.file.mimetype,
-        user_id: parseInt(user_id)
+        user_id: user_id
       };
       
       const newMedia = await MediaModel.createMedia(mediaData);
@@ -148,6 +149,8 @@ class MediaController {
     try {
       const { id } = req.params;
       const updates = req.body;
+      const requestingUserId = req.user.id;
+      const userRole = req.user.role;
       
       // Remove sensitive fields that shouldn't be updated via this endpoint
       const allowedUpdates = ['title', 'description'];
@@ -167,15 +170,7 @@ class MediaController {
         });
       }
       
-      const updatedMedia = await MediaModel.updateMedia(id, filteredUpdates);
-      
-      if (!updatedMedia) {
-        return res.status(404).json({
-          success: false,
-          error: 'Media not found',
-          message: `Media item with ID ${id} not found`
-        });
-      }
+      const updatedMedia = await MediaModel.updateMedia(id, filteredUpdates, requestingUserId, userRole);
       
       res.status(200).json({
         success: true,
@@ -184,6 +179,23 @@ class MediaController {
       });
     } catch (error) {
       console.error('Error updating media:', error);
+      
+      if (error.message.includes('You can only') || error.message.includes('access denied')) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied',
+          message: error.message
+        });
+      }
+      
+      if (error.message.includes('not found')) {
+        return res.status(404).json({
+          success: false,
+          error: 'Media not found',
+          message: error.message
+        });
+      }
+      
       res.status(500).json({
         success: false,
         error: 'Failed to update media',
@@ -196,6 +208,8 @@ class MediaController {
   static async deleteMedia(req, res) {
     try {
       const { id } = req.params;
+      const requestingUserId = req.user.id;
+      const userRole = req.user.role;
       
       // Get media info before deletion to clean up file
       const media = await MediaModel.getMediaById(id);
@@ -207,12 +221,12 @@ class MediaController {
         });
       }
       
-      const deleted = await MediaModel.deleteMedia(id);
+      const deleted = await MediaModel.deleteMedia(id, requestingUserId, userRole);
       
       if (deleted) {
         // Try to delete the physical file
         try {
-          const filePath = path.join(__dirname, '../../', media.file_path);
+          const filePath = path.resolve('./uploads', path.basename(media.file_path));
           await fs.unlink(filePath);
         } catch (fileError) {
           console.warn('Could not delete physical file:', fileError.message);
@@ -231,6 +245,23 @@ class MediaController {
       }
     } catch (error) {
       console.error('Error deleting media:', error);
+      
+      if (error.message.includes('You can only') || error.message.includes('access denied')) {
+        return res.status(403).json({
+          success: false,
+          error: 'Access denied',
+          message: error.message
+        });
+      }
+      
+      if (error.message.includes('not found')) {
+        return res.status(404).json({
+          success: false,
+          error: 'Media not found',
+          message: error.message
+        });
+      }
+      
       res.status(500).json({
         success: false,
         error: 'Failed to delete media',
@@ -240,4 +271,5 @@ class MediaController {
   }
 }
 
+// Export the controller
 module.exports = MediaController;
